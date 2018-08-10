@@ -8,13 +8,13 @@ remove_file "Gemfile"
 run "touch Gemfile"
 add_source 'https://rubygems.org'
 
-gem 'rails', '~> 5.1.4'
+gem 'rails', '~> 5.2.0'
 gem 'rails-i18n'
-
+gem 'jquery-ui-rails'
 gem 'jquery-rails'
 gem 'sass-rails'
 gem 'compass-rails'
-
+gem 'jquery-fileupload-rails'
 gem 'puma'
 gem 'mysql2'
 gem 'uglifier' # Ruby wrapper for UglifyJS JavaScript compressor.
@@ -24,17 +24,22 @@ gem 'devise-i18n'
 
 gem 'kaminari'
 gem 'kaminari-i18n'
-
+gem 'thor'
 gem 'grape'
 gem 'grape-swagger'
-
+gem 'enum_help'
 gem 'aasm'
+gem 'font-awesome-rails'
 gem 'pundit'
+gem 'i18n-js'
+gem 'rolify'
 gem 'ransack'
+gem 'seed_dump'
 gem 'paper_trail'
 gem 'simple_form'
 gem 'bulk_insert' # Efficient bulk inserts with ActiveRecord.
 gem 'carrierwave', '~> 1.0'
+gem 'wysiwyg-rails'
 
 gem_group :development, :test do
   gem 'brakeman', require: false
@@ -52,6 +57,9 @@ gem_group :development, :test do
   gem 'pry'
   gem 'pry-rails'
   gem 'pry-rescue'
+  gem 'pry-byebug'
+  gem 'pry-remote'
+  gem 'pry-stack_explorer'
   gem 'binding_of_caller'
   gem 'guard'
   gem 'guard-livereload'
@@ -71,6 +79,15 @@ gem_group :production do
 end
 
 inside 'config' do
+
+  remove_file 'boot.rb'
+  create_file 'boot.rb' do <<-EOF
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../Gemfile', __dir__)
+require 'bundler/setup'
+EOF
+  end
+
+
   remove_file 'database.yml'
   create_file 'database.yml' do <<-EOF
 default: &default
@@ -128,7 +145,7 @@ end
 environment production_config, env: 'production'
 
 after_bundle do
-  insert_into_file 'config/application.rb', after: "config.load_defaults 5.1\n" do <<~CONF
+  insert_into_file 'config/application.rb', after: "config.load_defaults 5.2\n" do <<~CONF
     config.time_zone = 'Asia/Taipei'
     config.i18n.default_locale = "zh-TW"
     config.generators do |g|
@@ -137,6 +154,13 @@ after_bundle do
     end
   CONF
   end
+
+  insert_into_file 'app/controllers/application_controller.rb', after:"class ApplicationController < ActionController::Base\n" do <<~CONF
+    include Pundit
+    protect_from_forgery
+  CONF
+  end
+
 
   remove_dir "test"
   remove_file "README.rdoc"
@@ -160,6 +184,7 @@ after_bundle do
   generate 'devise User'
   generate 'devise:views'
   generate 'simple_form:install --bootstrap'
+  generate 'larvata_scaffold:install'
 
   git :init
   git add: "."
